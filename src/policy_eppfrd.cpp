@@ -20,9 +20,11 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_eppfrd.hpp"
 #include "policy_error.hpp"
 #include "rnd.hpp"
 #include "rwlock.hpp"
+#include "strvec.hpp"
 
 #include <string>
 #include <vector>
@@ -62,7 +64,7 @@ namespace eppfrd
         if(branch->ro_or_nc())
           error_and_continue(error,EROFS);
         if(!fs::exists(branch->path,fusepath_))
-           error_and_continue(error,ENOENT);
+          error_and_continue(error,ENOENT);
         rv = fs::info(branch->path,&info);
         if(rv == -1)
           error_and_continue(error,ENOENT);
@@ -223,7 +225,7 @@ namespace eppfrd
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     int error;
     uint64_t sum;
@@ -244,7 +246,7 @@ namespace eppfrd
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     int error;
     uint64_t sum;
@@ -265,7 +267,7 @@ namespace eppfrd
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     int error;
     uint64_t sum;
@@ -284,19 +286,25 @@ namespace eppfrd
 }
 
 int
-Policy::Func::eppfrd(const Category  type_,
-                     const Branches &branches_,
-                     const char     *fusepath_,
-                     vector<string> *paths_)
+Policy::EPPFRD::Action::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return eppfrd::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return eppfrd::action(branches_,fusepath_,paths_);
-    default:
-    case Category::SEARCH:
-      return eppfrd::search(branches_,fusepath_,paths_);
-    }
+  return ::eppfrd::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPPFRD::Create::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::eppfrd::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPPFRD::Search::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::eppfrd::search(branches_,fusepath_,paths_);
 }

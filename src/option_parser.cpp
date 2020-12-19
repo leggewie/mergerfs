@@ -445,11 +445,11 @@ option_processor(void       *data_,
 namespace options
 {
   void
-  parse(fuse_args                *args_,
-        Config                   *config_,
-        std::vector<std::string> *errs_)
+  parse(fuse_args *args_,
+        StrVec    *errs_)
   {
     Data data;
+    Config &cfg = Config::instance();
     const struct fuse_opt opts[] =
       {
         FUSE_OPT_KEY("-h",MERGERFS_OPT_HELP),
@@ -460,21 +460,21 @@ namespace options
         {NULL,-1U,0}
       };
 
-    data.config = config_;
+    data.config = &cfg;
     data.errs   = errs_;
     fuse_opt_parse(args_,
                    &data,
                    opts,
                    ::option_processor);
 
-    if(config_->branches.vec.empty())
+    if(cfg.branches.vec.empty())
       errs_->push_back("branches not set");
-    if(config_->mount->empty())
+    if(cfg.mount->empty())
       errs_->push_back("mountpoint not set");
 
     set_default_options(args_);
-    set_fsname(args_,config_);
+    set_fsname(args_,&cfg);
     set_subtype(args_);
-    set_threads(args_,config_);
+    set_threads(args_,&cfg);
   }
 }

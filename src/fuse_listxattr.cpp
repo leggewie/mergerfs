@@ -14,7 +14,6 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#include "buildvector.hpp"
 #include "category.hpp"
 #include "config.hpp"
 #include "errno.hpp"
@@ -26,12 +25,10 @@
 #include <fuse.h>
 
 #include <string>
-#include <vector>
 
 #include <string.h>
 
 using std::string;
-using std::vector;
 
 namespace l
 {
@@ -57,7 +54,7 @@ namespace l
 
   static
   int
-  listxattr(Policy::Func::Search  searchFunc_,
+  listxattr(const Policy::Search &searchFunc_,
             const Branches       &branches_,
             const char           *fusepath_,
             char                 *list_,
@@ -65,7 +62,7 @@ namespace l
   {
     int rv;
     string fullpath;
-    vector<string> basepaths;
+    StrVec basepaths;
 
     rv = searchFunc_(branches_,fusepath_,&basepaths);
     if(rv == -1)
@@ -86,12 +83,12 @@ namespace FUSE
             char       *list_,
             size_t      size_)
   {
-    const Config &config = Config::ro();
+    Config::Read cfg = Config::ro();
 
-    if(fusepath_ == config.controlfile)
-      return l::listxattr_controlfile(config,list_,size_);
+    if(fusepath_ == CONTROLFILE)
+      return l::listxattr_controlfile(cfg.raw(),list_,size_);
 
-    switch(config.xattr)
+    switch(cfg->xattr)
       {
       case XAttr::ENUM::PASSTHROUGH:
         break;
@@ -104,8 +101,8 @@ namespace FUSE
     const fuse_context *fc = fuse_get_context();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    return l::listxattr(config.func.listxattr.policy,
-                        config.branches,
+    return l::listxattr(cfg->func.listxattr.policy,
+                        cfg->branches,
                         fusepath_,
                         list_,
                         size_);

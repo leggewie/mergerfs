@@ -29,7 +29,6 @@
 #include <unistd.h>
 
 using std::string;
-using std::vector;
 
 
 namespace error
@@ -74,7 +73,7 @@ namespace l
   static
   int
   symlink_loop(const string         &existingpath_,
-               const vector<string> &newbasepaths_,
+               const StrVec &newbasepaths_,
                const char           *oldpath_,
                const char           *newpath_,
                const string         &newdirpath_)
@@ -100,16 +99,16 @@ namespace l
 
   static
   int
-  symlink(Policy::Func::Search  searchFunc_,
-          Policy::Func::Create  createFunc_,
+  symlink(const Policy::Search &searchFunc_,
+          const Policy::Create &createFunc_,
           const Branches       &branches_,
           const char           *oldpath_,
           const char           *newpath_)
   {
     int rv;
     string newdirpath;
-    vector<string> newbasepaths;
-    vector<string> existingpaths;
+    StrVec newbasepaths;
+    StrVec existingpaths;
 
     newdirpath = fs::path::dirname(newpath_);
 
@@ -132,13 +131,13 @@ namespace FUSE
   symlink(const char *oldpath_,
           const char *newpath_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    return l::symlink(config.func.getattr.policy,
-                      config.func.symlink.policy,
-                      config.branches,
+    return l::symlink(cfg->func.getattr.policy,
+                      cfg->func.symlink.policy,
+                      cfg->branches,
                       oldpath_,
                       newpath_);
   }

@@ -180,7 +180,7 @@ namespace l
 
   static
   int
-  open(Policy::Func::Search  searchFunc_,
+  open(const Policy::Search &searchFunc_,
        PolicyCache          &cache,
        const Branches       &branches_,
        const char           *fusepath_,
@@ -190,13 +190,14 @@ namespace l
        uint64_t             *fh_)
   {
     int rv;
-    string basepath;
+    StrVec basepaths;
 
-    rv = cache(searchFunc_,branches_,fusepath_,&basepath);
+    //    rv = cache(searchFunc_,branches_,fusepath_,&basepath);
+    rv = searchFunc_(branches_,fusepath_,&basepaths);
     if(rv == -1)
       return -errno;
 
-    return l::open_core(basepath,fusepath_,flags_,link_cow_,nfsopenhack_,fh_);
+    return l::open_core(basepaths[0],fusepath_,flags_,link_cow_,nfsopenhack_,fh_);
   }
 }
 
@@ -206,22 +207,22 @@ namespace FUSE
   open(const char       *fusepath_,
        fuse_file_info_t *ffi_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    l::config_to_ffi_flags(config,ffi_);
+    l::config_to_ffi_flags(cfg.raw(),ffi_);
 
-    if(config.writeback_cache)
+    if(cfg->writeback_cache)
       l::tweak_flags_writeback_cache(&ffi_->flags);
 
-    return l::open(config.func.open.policy,
-                   config.open_cache,
-                   config.branches,
+    return l::open(cfg->func.open.policy,
+                   cfg->open_cache,
+                   cfg->branches,
                    fusepath_,
                    ffi_->flags,
-                   config.link_cow,
-                   config.nfsopenhack,
+                   cfg->link_cow,
+                   cfg->nfsopenhack,
                    &ffi_->fh);
   }
 }

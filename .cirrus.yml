@@ -6,7 +6,7 @@ freebsd_task:
     ASSUME_ALWAYS_YES: yes
   script:
     - tools/install-build-pkgs
-    - gmake -j4
+    - gmake
 
 #macos_task:
 #  osx_instance:

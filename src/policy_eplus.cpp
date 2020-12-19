@@ -20,15 +20,14 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_eplus.hpp"
 #include "policy_error.hpp"
 #include "rwlock.hpp"
 
 #include <limits>
 #include <string>
-#include <vector>
 
 using std::string;
-using std::vector;
 
 namespace eplus
 {
@@ -36,7 +35,7 @@ namespace eplus
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -82,7 +81,7 @@ namespace eplus
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -93,7 +92,7 @@ namespace eplus
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -137,7 +136,7 @@ namespace eplus
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -148,7 +147,7 @@ namespace eplus
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     uint64_t eplus;
@@ -186,7 +185,7 @@ namespace eplus
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -195,19 +194,25 @@ namespace eplus
 }
 
 int
-Policy::Func::eplus(const Category  type_,
-                    const Branches &branches_,
-                    const char     *fusepath_,
-                    vector<string> *paths_)
+Policy::EPLUS::Action::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return eplus::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return eplus::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return eplus::search(branches_,fusepath_,paths_);
-    }
+  return ::eplus::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPLUS::Create::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::eplus::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPLUS::Search::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::eplus::search(branches_,fusepath_,paths_);
 }

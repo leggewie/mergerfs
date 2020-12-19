@@ -69,31 +69,31 @@ namespace l
 
   static
   int
-  setxattr_controlfile(Config       &config_,
-                       const string &attrname_,
+  setxattr_controlfile(const string &attrname_,
                        const string &attrval_,
                        const int     flags_)
   {
     int rv;
     string key;
+    Config::Write cfg = Config::rw();
 
     if(!str::startswith(attrname_,"user.mergerfs."))
       return -ENOATTR;
 
     key = &attrname_[14];
 
-    if(config_.has_key(key) == false)
+    if(cfg->has_key(key) == false)
       return -ENOATTR;
 
     if((flags_ & XATTR_CREATE) == XATTR_CREATE)
       return -EEXIST;
 
-    rv = config_.set(key,attrval_);
+    rv = cfg->set(key,attrval_);
     if(rv < 0)
       return rv;
 
-    config_.open_cache.clear();
-    fs::statvfs_cache_timeout(config_.cache_statfs);
+    cfg->open_cache.clear();
+    fs::statvfs_cache_timeout(cfg->cache_statfs);
 
     return rv;
   }
@@ -120,13 +120,13 @@ namespace l
 
   static
   void
-  setxattr_loop(const vector<string> &basepaths_,
-                const char           *fusepath_,
-                const char           *attrname_,
-                const char           *attrval_,
-                const size_t          attrvalsize_,
-                const int             flags_,
-                PolicyRV             *prv_)
+  setxattr_loop(const StrVec &basepaths_,
+                const char   *fusepath_,
+                const char   *attrname_,
+                const char   *attrval_,
+                const size_t  attrvalsize_,
+                const int     flags_,
+                PolicyRV     *prv_)
   {
     for(size_t i = 0, ei = basepaths_.size(); i != ei; i++)
       {
@@ -138,8 +138,8 @@ namespace l
 
   static
   int
-  setxattr(Policy::Func::Action  actionFunc_,
-           Policy::Func::Search  searchFunc_,
+  setxattr(const Policy::Action &setxattrPolicy_,
+           const Policy::Search &getxattrPolicy_,
            const Branches       &branches_,
            const char           *fusepath_,
            const char           *attrname_,
@@ -149,9 +149,9 @@ namespace l
   {
     int rv;
     PolicyRV prv;
-    vector<string> basepaths;
+    StrVec basepaths;
 
-    rv = actionFunc_(branches_,fusepath_,&basepaths);
+    rv = setxattrPolicy_(branches_,fusepath_,&basepaths);
     if(rv == -1)
       return -errno;
 
@@ -162,11 +162,40 @@ namespace l
       return prv.error[0].rv;
 
     basepaths.clear();
-    rv = searchFunc_(branches_,fusepath_,&basepaths);
+    rv = getxattrPolicy_(branches_,fusepath_,&basepaths);
     if(rv == -1)
       return -errno;
 
     return l::get_error(prv,basepaths[0]);
+  }
+
+  int
+  setxattr(const char *fusepath_,
+           const char *attrname_,
+           const char *attrval_,
+           size_t      attrvalsize_,
+           int         flags_)
+  {
+    Config::Read cfg = Config::ro();
+    
+    if((cfg->security_capability == false) &&
+       l::is_attrname_security_capability(attrname_))
+      return -ENOATTR;
+
+    if(cfg->xattr.to_int())
+      return -cfg->xattr.to_int();
+
+    const fuse_context *fc = fuse_get_context();
+    const ugid::Set     ugid(fc->uid,fc->gid);
+
+    return l::setxattr(cfg->func.setxattr.policy,
+                       cfg->func.getxattr.policy,
+                       cfg->branches,
+                       fusepath_,
+                       attrname_,
+                       attrval_,
+                       attrvalsize_,
+                       flags_);
   }
 }
 
@@ -179,31 +208,11 @@ namespace FUSE
            size_t      attrvalsize_,
            int         flags_)
   {
-    Config &config = Config::rw();
-
-    if(fusepath_ == config.controlfile)
-      return l::setxattr_controlfile(config,
-                                     attrname_,
+    if(fusepath_ == CONTROLFILE)
+      return l::setxattr_controlfile(attrname_,
                                      string(attrval_,attrvalsize_),
                                      flags_);
 
-    if((config.security_capability == false) &&
-       l::is_attrname_security_capability(attrname_))
-      return -ENOATTR;
-
-    if(config.xattr.to_int())
-      return -config.xattr.to_int();
-
-    const fuse_context *fc = fuse_get_context();
-    const ugid::Set     ugid(fc->uid,fc->gid);
-
-    return l::setxattr(config.func.setxattr.policy,
-                       config.func.getxattr.policy,
-                       config.branches,
-                       fusepath_,
-                       attrname_,
-                       attrval_,
-                       attrvalsize_,
-                       flags_);
+    return l::setxattr(fusepath_,attrname_,attrval_,attrvalsize_,flags_);
   }
 }

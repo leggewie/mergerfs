@@ -20,14 +20,15 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_epall.hpp"
 #include "policy_error.hpp"
 #include "rwlock.hpp"
+#include "strvec.hpp"
 
 #include <string>
-#include <vector>
 
 using std::string;
-using std::vector;
+
 
 namespace epall
 {
@@ -35,7 +36,7 @@ namespace epall
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -72,7 +73,7 @@ namespace epall
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -83,7 +84,7 @@ namespace epall
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -118,7 +119,7 @@ namespace epall
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -129,7 +130,7 @@ namespace epall
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     const Branch *branch;
 
@@ -153,7 +154,7 @@ namespace epall
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -162,19 +163,25 @@ namespace epall
 }
 
 int
-Policy::Func::epall(const Category  type_,
-                    const Branches &branches_,
-                    const char     *fusepath_,
-                    vector<string> *paths_)
+Policy::EPAll::Action::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return epall::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return epall::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return epall::search(branches_,fusepath_,paths_);
-    }
+  return ::epall::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPAll::Create::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::epall::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPAll::Search::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::epall::search(branches_,fusepath_,paths_);
 }

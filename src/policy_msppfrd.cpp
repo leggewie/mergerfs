@@ -22,6 +22,8 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_msppfrd.hpp"
+#include "policies.hpp"
 #include "policy_error.hpp"
 #include "rnd.hpp"
 #include "rwlock.hpp"
@@ -149,7 +151,7 @@ namespace msppfrd
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     int error;
     uint64_t sum;
@@ -168,13 +170,25 @@ namespace msppfrd
 }
 
 int
-Policy::Func::msppfrd(const Category  type_,
-                      const Branches &branches_,
-                      const char     *fusepath_,
-                      vector<string> *paths_)
+Policy::MSPPFRD::Action::operator()(const Branches &branches_,
+                                    const char     *fusepath_,
+                                    StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return msppfrd::create(branches_,fusepath_,paths_);
+  return Policies::Action::eppfrd(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::eppfrd(type_,branches_,fusepath_,paths_);
+int
+Policy::MSPPFRD::Create::operator()(const Branches &branches_,
+                                    const char     *fusepath_,
+                                    StrVec         *paths_) const
+{
+  return ::msppfrd::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::MSPPFRD::Search::operator()(const Branches &branches_,
+                                    const char     *fusepath_,
+                                    StrVec         *paths_) const
+{
+  return Policies::Search::eppfrd(branches_,fusepath_,paths_);
 }

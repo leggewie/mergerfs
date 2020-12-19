@@ -52,12 +52,12 @@ namespace FUSE
   int
   release(const fuse_file_info_t *ffi_)
   {
-    const Config &config = Config::ro();
-    FileInfo *fi = reinterpret_cast<FileInfo*>(ffi_->fh);
+    Config::Read  cfg = Config::ro();
+    FileInfo     *fi  = reinterpret_cast<FileInfo*>(ffi_->fh);
 
-    if(config.open_cache.timeout)
-      config.open_cache.cleanup(10);
+    if(cfg->open_cache.timeout)
+      cfg->open_cache.cleanup(10);
 
-    return l::release(fi,config.dropcacheonclose);
+    return l::release(fi,cfg->dropcacheonclose);
   }
 }

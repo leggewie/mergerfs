@@ -19,7 +19,9 @@
 #include "fs_info.hpp"
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
+#include "policy_eplfs.hpp"
 #include "policy_error.hpp"
 #include "rwlock.hpp"
 
@@ -36,7 +38,7 @@ namespace eplfs
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -82,7 +84,7 @@ namespace eplfs
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -93,7 +95,7 @@ namespace eplfs
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -137,7 +139,7 @@ namespace eplfs
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -148,7 +150,7 @@ namespace eplfs
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     uint64_t eplfs;
@@ -186,7 +188,7 @@ namespace eplfs
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -195,19 +197,25 @@ namespace eplfs
 }
 
 int
-Policy::Func::eplfs(const Category  type_,
-                    const Branches &branches_,
-                    const char     *fusepath_,
-                    vector<string> *paths_)
+Policy::EPLFS::Action::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return eplfs::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return eplfs::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return eplfs::search(branches_,fusepath_,paths_);
-    }
+  return ::eplfs::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPLFS::Create::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::eplfs::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPLFS::Search::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::eplfs::search(branches_,fusepath_,paths_);
 }

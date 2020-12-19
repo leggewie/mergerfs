@@ -47,7 +47,7 @@ namespace l
 {
   static
   int
-  movefile(Policy::Func::Create  createFunc_,
+  movefile(const Policy::Create &createFunc_,
            const Branches       &branches_,
            const string         &fusepath_,
            int                  *origfd_)
@@ -132,19 +132,19 @@ namespace l
 namespace fs
 {
   int
-  movefile(const Policy   *policy_,
-           const Branches &basepaths_,
-           const string   &fusepath_,
-           int            *origfd_)
+  movefile(const Policy::Create &policy_,
+           const Branches       &basepaths_,
+           const string         &fusepath_,
+           int                  *origfd_)
   {
     return l::movefile(policy_,basepaths_,fusepath_,origfd_);
   }
 
   int
-  movefile_as_root(const Policy   *policy_,
-                   const Branches &basepaths_,
-                   const string   &fusepath_,
-                   int            *origfd_)
+  movefile_as_root(const Policy::Create &policy_,
+                   const Branches       &basepaths_,
+                   const string         &fusepath_,
+                   int                  *origfd_)
   {
     const ugid::Set ugid(0,0);
 

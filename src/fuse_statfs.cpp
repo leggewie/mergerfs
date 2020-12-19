@@ -153,14 +153,14 @@ namespace FUSE
   statfs(const char     *fusepath_,
          struct statvfs *st_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    return l::statfs(config.branches,
+    return l::statfs(cfg->branches,
                      fusepath_,
-                     config.statfs,
-                     config.statfs_ignore,
+                     cfg->statfs,
+                     cfg->statfs_ignore,
                      st_);
   }
 }

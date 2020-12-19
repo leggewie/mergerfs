@@ -20,15 +20,16 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_epmfs.hpp"
 #include "policy_error.hpp"
 #include "rwlock.hpp"
 
 #include <limits>
 #include <string>
-#include <vector>
+
 
 using std::string;
-using std::vector;
+
 
 namespace epmfs
 {
@@ -36,7 +37,7 @@ namespace epmfs
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -82,7 +83,7 @@ namespace epmfs
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -93,7 +94,7 @@ namespace epmfs
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -137,7 +138,7 @@ namespace epmfs
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -148,7 +149,7 @@ namespace epmfs
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     uint64_t epmfs;
@@ -186,7 +187,7 @@ namespace epmfs
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -195,19 +196,25 @@ namespace epmfs
 }
 
 int
-Policy::Func::epmfs(const Category  type_,
-                    const Branches &branches_,
-                    const char     *fusepath_,
-                    vector<string> *paths_)
+Policy::EPMFS::Action::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return epmfs::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return epmfs::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return epmfs::search(branches_,fusepath_,paths_);
-    }
+  return ::epmfs::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPMFS::Create::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::epmfs::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPMFS::Search::operator()(const Branches &branches_,
+                                  const char     *fusepath_,
+                                  StrVec         *paths_) const
+{
+  return ::epmfs::search(branches_,fusepath_,paths_);
 }

@@ -19,16 +19,17 @@
 #include "fs_info.hpp"
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_msplfs.hpp"
 #include "rwlock.hpp"
+#include "strvec.hpp"
 
 #include <limits>
 #include <string>
-#include <vector>
 
 using std::string;
-using std::vector;
 
 
 namespace msplfs
@@ -77,7 +78,7 @@ namespace msplfs
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int error;
     string fusepath;
@@ -107,7 +108,7 @@ namespace msplfs
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -116,13 +117,25 @@ namespace msplfs
 }
 
 int
-Policy::Func::msplfs(const Category  type_,
-                     const Branches &branches_,
-                     const char     *fusepath_,
-                     vector<string> *paths_)
+Policy::MSPLFS::Action::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return msplfs::create(branches_,fusepath_,paths_);
+  return Policies::Action::eplfs(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::eplfs(type_,branches_,fusepath_,paths_);
+int
+Policy::MSPLFS::Create::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::msplfs::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::MSPLFS::Search::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return Policies::Search::eplfs(branches_,fusepath_,paths_);
 }

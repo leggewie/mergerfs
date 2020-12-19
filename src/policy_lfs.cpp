@@ -18,23 +18,24 @@
 #include "fs_exists.hpp"
 #include "fs_info.hpp"
 #include "fs_path.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_lfs.hpp"
 #include "rwlock.hpp"
+#include "strvec.hpp"
 
 #include <limits>
 #include <string>
-#include <vector>
 
 using std::string;
-using std::vector;
 
 namespace lfs
 {
   static
   int
   create(const BranchVec &branches_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -77,22 +78,34 @@ namespace lfs
   static
   int
   create(const Branches &branches_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
-    return lfs::create(branches_.vec,paths_);
+    return ::lfs::create(branches_.vec,paths_);
   }
 }
 
 int
-Policy::Func::lfs(const Category  type_,
-                  const Branches &branches_,
-                  const char     *fusepath_,
-                  vector<string> *paths_)
+Policy::LFS::Action::operator()(const Branches &branches_,
+                                const char     *fusepath_,
+                                StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return lfs::create(branches_,paths_);
+  return Policies::Action::eplfs(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::eplfs(type_,branches_,fusepath_,paths_);
+int
+Policy::LFS::Create::operator()(const Branches &branches_,
+                                const char     *fusepath_,
+                                StrVec         *paths_) const
+{
+  return ::lfs::create(branches_,paths_);
+}
+
+int
+Policy::LFS::Search::operator()(const Branches &branches_,
+                                const char     *fusepath_,
+                                StrVec         *paths_) const
+{
+  return Policies::Search::eplfs(branches_,fusepath_,paths_);
 }

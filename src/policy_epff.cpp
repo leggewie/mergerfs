@@ -20,6 +20,7 @@
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
+#include "policy_epff.hpp"
 #include "policy_error.hpp"
 #include "rwlock.hpp"
 
@@ -35,7 +36,7 @@ namespace epff
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -71,7 +72,7 @@ namespace epff
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -82,7 +83,7 @@ namespace epff
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -116,7 +117,7 @@ namespace epff
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -127,7 +128,7 @@ namespace epff
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     const Branch *branch;
 
@@ -150,7 +151,7 @@ namespace epff
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -159,19 +160,25 @@ namespace epff
 }
 
 int
-Policy::Func::epff(const Category  type_,
-                   const Branches &branches_,
-                   const char     *fusepath_,
-                   vector<string> *paths_)
+Policy::EPFF::Action::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return epff::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return epff::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return epff::search(branches_,fusepath_,paths_);
-    }
+  return ::epff::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPFF::Create::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
+{
+  return ::epff::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::EPFF::Search::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
+{
+  return ::epff::search(branches_,fusepath_,paths_);
 }

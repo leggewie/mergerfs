@@ -18,6 +18,7 @@
 
 #include "branch.hpp"
 #include "ef.hpp"
+#include "errno.hpp"
 #include "from_string.hpp"
 #include "fs_glob.hpp"
 #include "fs_realpathize.hpp"
@@ -27,7 +28,6 @@
 
 #include <string>
 
-#include <errno.h>
 #include <fnmatch.h>
 
 using std::string;

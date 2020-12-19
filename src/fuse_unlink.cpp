@@ -84,14 +84,14 @@ namespace l
 
   static
   int
-  unlink(Policy::Func::Action  actionFunc_,
+  unlink(const Policy::Action &unlinkPolicy_,
          const Branches       &branches_,
          const char           *fusepath_)
   {
     int rv;
     vector<string> basepaths;
 
-    rv = actionFunc_(branches_,fusepath_,&basepaths);
+    rv = unlinkPolicy_(branches_,fusepath_,&basepaths);
     if(rv == -1)
       return -errno;
 
@@ -104,14 +104,14 @@ namespace FUSE
   int
   unlink(const char *fusepath_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    config.open_cache.erase(fusepath_);
+    cfg->open_cache.erase(fusepath_);
 
-    return l::unlink(config.func.unlink.policy,
-                     config.branches,
+    return l::unlink(cfg->func.unlink.policy,
+                     cfg->branches,
                      fusepath_);
   }
 }

@@ -17,10 +17,13 @@
 #include "errno.hpp"
 #include "fs_info.hpp"
 #include "fs_path.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_pfrd.hpp"
 #include "rnd.hpp"
 #include "rwlock.hpp"
+#include "strvec.hpp"
 
 #include <string>
 #include <vector>
@@ -117,7 +120,7 @@ namespace pfrd
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     int error;
     uint64_t sum;
@@ -136,13 +139,25 @@ namespace pfrd
 }
 
 int
-Policy::Func::pfrd(const Category  type_,
-                   const Branches &branches_,
-                   const char     *fusepath_,
-                   vector<string> *paths_)
+Policy::PFRD::Action::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return pfrd::create(branches_,fusepath_,paths_);
+  return Policies::Action::eppfrd(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::eppfrd(type_,branches_,fusepath_,paths_);
+int
+Policy::PFRD::Create::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
+{
+  return ::pfrd::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::PFRD::Search::operator()(const Branches &branches_,
+                                 const char     *fusepath_,
+                                 StrVec         *paths_) const
+{
+  return Policies::Search::eppfrd(branches_,fusepath_,paths_);
 }

@@ -19,8 +19,10 @@
 #include "fs_info.hpp"
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_mspmfs.hpp"
 #include "rwlock.hpp"
 
 #include <limits>
@@ -77,7 +79,7 @@ namespace mspmfs
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int error;
     string fusepath;
@@ -107,7 +109,7 @@ namespace mspmfs
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -116,13 +118,25 @@ namespace mspmfs
 }
 
 int
-Policy::Func::mspmfs(const Category  type_,
-                     const Branches &branches_,
-                     const char     *fusepath_,
-                     vector<string> *paths_)
+Policy::MSPMFS::Action::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return mspmfs::create(branches_,fusepath_,paths_);
+  return Policies::Action::epmfs(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::epmfs(type_,branches_,fusepath_,paths_);
+int
+Policy::MSPMFS::Create::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::mspmfs::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::MSPMFS::Search::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return Policies::Search::epmfs(branches_,fusepath_,paths_);
 }

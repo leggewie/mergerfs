@@ -24,14 +24,14 @@
 namespace fs
 {
   int
-  movefile(const Policy      *policy,
-           const Branches    &branches,
-           const std::string &fusepath,
-           int               *origfd);
+  movefile(const Policy::Create &policy,
+           const Branches       &branches,
+           const std::string    &fusepath,
+           int                  *origfd);
 
   int
-  movefile_as_root(const Policy      *policy,
-                   const Branches    &branches,
-                   const std::string &fusepath,
-                   int               *origfd);
+  movefile_as_root(const Policy::Create &policy,
+                   const Branches       &branches,
+                   const std::string    &fusepath,
+                   int                  *origfd);
 }

@@ -19,17 +19,16 @@
 #include "fs_info.hpp"
 #include "fs_path.hpp"
 #include "fs_statvfs_cache.hpp"
+#include "policies.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_msplus.hpp"
 #include "rwlock.hpp"
 
 #include <limits>
 #include <string>
-#include <vector>
 
 using std::string;
-using std::vector;
-
 
 namespace msplus
 {
@@ -77,7 +76,7 @@ namespace msplus
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int error;
     string fusepath;
@@ -107,7 +106,7 @@ namespace msplus
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -116,13 +115,25 @@ namespace msplus
 }
 
 int
-Policy::Func::msplus(const Category  type_,
-                     const Branches &branches_,
-                     const char     *fusepath_,
-                     vector<string> *paths_)
+Policy::MSPLUS::Action::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
 {
-  if(type_ == Category::CREATE)
-    return msplus::create(branches_,fusepath_,paths_);
+  return Policies::Action::eplus(branches_,fusepath_,paths_);
+}
 
-  return Policy::Func::eplus(type_,branches_,fusepath_,paths_);
+int
+Policy::MSPLUS::Create::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::msplus::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::MSPLUS::Search::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return Policies::Search::eplus(branches_,fusepath_,paths_);
 }

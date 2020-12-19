@@ -32,18 +32,18 @@ namespace FUSE
   readdir(const fuse_file_info_t *ffi_,
           fuse_dirents_t         *buf_)
   {
-    DirInfo            *di     = reinterpret_cast<DirInfo*>(ffi_->fh);
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    DirInfo            *di  = reinterpret_cast<DirInfo*>(ffi_->fh);
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    switch(config.readdir)
+    switch(cfg->readdir)
       {
       case ReadDir::ENUM::LINUX:
-        return FUSE::readdir_linux(config.branches,di->fusepath.c_str(),buf_);
+        return FUSE::readdir_linux(cfg->branches,di->fusepath.c_str(),buf_);
       default:
       case ReadDir::ENUM::POSIX:
-        return FUSE::readdir_posix(config.branches,di->fusepath.c_str(),buf_);
+        return FUSE::readdir_posix(cfg->branches,di->fusepath.c_str(),buf_);
       }
   }
 }

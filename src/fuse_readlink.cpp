@@ -27,7 +27,6 @@
 #include <string.h>
 
 using std::string;
-using std::vector;
 
 namespace l
 {
@@ -92,7 +91,7 @@ namespace l
 
   static
   int
-  readlink(Policy::Func::Search  searchFunc_,
+  readlink(const Policy::Search &searchFunc_,
            const Branches       &branches_,
            const char           *fusepath_,
            char                 *buf_,
@@ -101,7 +100,7 @@ namespace l
            const time_t          symlinkify_timeout_)
   {
     int rv;
-    vector<string> basepaths;
+    StrVec basepaths;
 
     rv = searchFunc_(branches_,fusepath_,&basepaths);
     if(rv == -1)
@@ -119,16 +118,16 @@ namespace FUSE
            char       *buf_,
            size_t      size_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    return l::readlink(config.func.readlink.policy,
-                       config.branches,
+    return l::readlink(cfg->func.readlink.policy,
+                       cfg->branches,
                        fusepath_,
                        buf_,
                        size_,
-                       config.symlinkify,
-                       config.symlinkify_timeout);
+                       cfg->symlinkify,
+                       cfg->symlinkify_timeout);
   }
 }

@@ -21,16 +21,15 @@
 #include "fs_statvfs_cache.hpp"
 #include "policy.hpp"
 #include "policy_error.hpp"
+#include "policy_newest.hpp"
 #include "rwlock.hpp"
 
 #include <string>
-#include <vector>
 #include <limits>
 
 #include <sys/stat.h>
 
 using std::string;
-using std::vector;
 
 namespace newest
 {
@@ -38,7 +37,7 @@ namespace newest
   int
   create(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -85,7 +84,7 @@ namespace newest
   int
   create(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -96,7 +95,7 @@ namespace newest
   int
   action(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     int rv;
     int error;
@@ -141,7 +140,7 @@ namespace newest
   int
   action(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -152,7 +151,7 @@ namespace newest
   int
   search(const BranchVec &branches_,
          const char      *fusepath_,
-         vector<string>  *paths_)
+         StrVec          *paths_)
   {
     time_t newest;
     struct stat st;
@@ -186,7 +185,7 @@ namespace newest
   int
   search(const Branches &branches_,
          const char     *fusepath_,
-         vector<string> *paths_)
+         StrVec         *paths_)
   {
     rwlock::ReadGuard guard(branches_.lock);
 
@@ -195,19 +194,25 @@ namespace newest
 }
 
 int
-Policy::Func::newest(const Category  type_,
-                     const Branches &branches_,
-                     const char     *fusepath_,
-                     vector<string> *paths_)
+Policy::Newest::Action::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
 {
-  switch(type_)
-    {
-    case Category::CREATE:
-      return newest::create(branches_,fusepath_,paths_);
-    case Category::ACTION:
-      return newest::action(branches_,fusepath_,paths_);
-    case Category::SEARCH:
-    default:
-      return newest::search(branches_,fusepath_,paths_);
-    }
+  return ::newest::action(branches_,fusepath_,paths_);
+}
+
+int
+Policy::Newest::Create::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::newest::create(branches_,fusepath_,paths_);
+}
+
+int
+Policy::Newest::Search::operator()(const Branches &branches_,
+                                   const char     *fusepath_,
+                                   StrVec         *paths_) const
+{
+  return ::newest::search(branches_,fusepath_,paths_);
 }

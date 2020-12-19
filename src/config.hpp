@@ -25,15 +25,15 @@
 #include "config_statfs.hpp"
 #include "config_statfsignore.hpp"
 #include "config_xattr.hpp"
+#include "category.hpp"
 #include "enum.hpp"
 #include "errno.hpp"
-#include "func_category.hpp"
 #include "funcs.hpp"
 #include "policy.hpp"
 #include "policy_cache.hpp"
 #include "tofrom_wrapper.hpp"
 
-#include <fuse.h>
+#include "fuse.h"
 
 #include <string>
 #include <vector>
@@ -47,16 +47,47 @@ typedef ToFromWrapper<int>                  ConfigINT;
 typedef ToFromWrapper<std::string>          ConfigSTR;
 typedef std::map<std::string,ToFromString*> Str2TFStrMap;
 
+extern const std::string CONTROLFILE;
+
 class Config
 {
 public:
   Config();
 
 public:
-  mutable PolicyCache open_cache;
+  class Read
+  {
+  public:
+    Read(const Config &config_)
+      : _config(config_),
+        _guard(config_._rwlock)
+    {}
+  public:
+    inline const Config* operator->() const { return &_config; };
+    inline const Config& raw() const { return _config; };
+  private:
+    const Config              &_config;
+    mutable rwlock::ReadGuard  _guard;
+  };
 
 public:
-  const std::string controlfile;
+  class Write
+  {
+  public:
+    Write(Config &config_)
+      : _config(config_),
+        _guard(config_._rwlock)
+    {}
+  public:
+    inline Config* operator->() { return &_config; };
+    inline Config& raw() { return _config; };
+  private:
+    Config                     &_config;
+    mutable rwlock::WriteGuard  _guard;
+  };
+
+public:
+  mutable PolicyCache open_cache;
 
 public:
   ConfigBOOL     async_read;
@@ -69,7 +100,7 @@ public:
   ConfigBOOL     cache_readdir;
   ConfigUINT64   cache_statfs;
   ConfigBOOL     cache_symlinks;
-  FuncCategories category;
+  Categories     category;
   ConfigBOOL     direct_io;
   ConfigBOOL     dropcacheonclose;
   ConfigSTR      fsname;
@@ -113,10 +144,38 @@ public:
   int set_raw(const std::string &key, const std::string &val);
   int set(const std::string &key, const std::string &val);
 
-public:
-  static const Config &ro(void);
-  static Config       &rw(void);
-
 private:
   Str2TFStrMap _map;
+
+private:
+  mutable pthread_rwlock_t _rwlock;
+
+private:
+  static Config _singleton;
+
+public:
+  static inline Config&       instance(void);
+  static inline Config::Read  ro(void);
+  static inline Config::Write rw(void);
 };
+
+inline
+Config&
+Config::instance(void)
+{
+  return Config::_singleton;
+}
+
+inline
+Config::Read
+Config::ro(void)
+{
+  return Config::Read(Config::instance());
+}
+
+inline
+Config::Write
+Config::rw(void)
+{
+  return Config::Write(Config::instance());
+}

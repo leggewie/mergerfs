@@ -66,8 +66,8 @@ namespace l
 
   static
   int
-  rmdir_loop(const vector<string> &basepaths_,
-             const char           *fusepath_)
+  rmdir_loop(const StrVec &basepaths_,
+             const char   *fusepath_)
   {
     int error;
 
@@ -82,7 +82,7 @@ namespace l
 
   static
   int
-  rmdir(Policy::Func::Action  actionFunc_,
+  rmdir(const Policy::Action &actionFunc_,
         const Branches       &branches_,
         const char           *fusepath_)
   {
@@ -102,12 +102,12 @@ namespace FUSE
   int
   rmdir(const char *fusepath_)
   {
-    const fuse_context *fc     = fuse_get_context();
-    const Config       &config = Config::ro();
+    const fuse_context *fc  = fuse_get_context();
+    Config::Read        cfg = Config::ro();
     const ugid::Set     ugid(fc->uid,fc->gid);
 
-    return l::rmdir(config.func.rmdir.policy,
-                    config.branches,
+    return l::rmdir(cfg->func.rmdir.policy,
+                    cfg->branches,
                     fusepath_);
   }
 }

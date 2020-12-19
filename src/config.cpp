@@ -30,12 +30,15 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define MINFREESPACE_DEFAULT (4294967295ULL)
 
 using std::string;
 
 #define IFERT(S) if(S == s_) return true
+
+const std::string CONTROLFILE = "/.mergerfs";
 
 namespace l
 {
@@ -59,11 +62,11 @@ namespace l
   }
 }
 
+Config Config::_singleton;
+
 Config::Config()
   :
   open_cache(),
-
-  controlfile("/.mergerfs"),
 
   async_read(true),
   auto_cache(false),
@@ -164,19 +167,6 @@ Config::Config()
   _map["threads"]              = &threads;
   _map["version"]              = &version;
   _map["xattr"]                = &xattr;
-}
-
-const
-Config&
-Config::ro(void)
-{
-  return *((Config*)fuse_get_context()->private_data);
-}
-
-Config&
-Config::rw(void)
-{
-  return *((Config*)fuse_get_context()->private_data);
 }
 
 bool
